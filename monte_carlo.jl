@@ -28,6 +28,8 @@ md"""
 # Monte Carlo methods for uncertainty quantification
 
 **[Michiel Stock](michielfmstock@gmail.com)**
+
+![](https://github.com/MichielStock/MonteCarloLecture/blob/main/figs/dice.jpg?raw=true)
 """
 
 # ╔═╡ 762a6406-7549-4edb-b61e-35a930bc29af
@@ -39,6 +41,9 @@ md"""
 
 As a running example, we consider a simplified model for the treatment of HIV. We track the number of infected T-cells ($N_i$) and the number of virus particles ($N_v$) after treatment with a virus blocker such as ritonavir or zidovudine. Such treatments prevent the virus from infecting new T-cells, resulting in the slow removal of the virions in the body.
 """
+
+# ╔═╡ 8d691f22-ada3-4e34-839b-be3577e3d665
+md"![Simplified HIV virus life cycle and effect of antiretroviral drug.](https://github.com/MichielStock/MonteCarloLecture/blob/main/figs/virus_diagram.png?raw=true)"
 
 # ╔═╡ 521a7146-6de1-450f-aaa5-8584c8ec7e10
 md"""
@@ -305,6 +310,7 @@ md"""
 
 - Very general method for uncertainty analysis, works with any type of model.
 - Easy to implement.
+- Easy to work with dependent variables as inputs.
 - Might require a very large number of simulations $n$ to fully cover the parameter space. Need 
 - Trivial to parallelize on a cluster (**[embarrassingly parallelizable algorithm](https://en.wikipedia.org/wiki/Embarrassingly_parallel)**).
 
@@ -317,6 +323,12 @@ html"<button onclick='present()'>leave presentation</button>"
 md"""
 
 ## Resources
+
+Nopens, I. and Fernandes Del Poze, *Modelling and Simulation of Biosystems - course notes* - edition 2022
+
+Nelson, P., *Physical Models of Living Systems*
+
+MacKay, D., *Information Theory, Inference and Learning Algorithms*
 
 """
 
@@ -349,7 +361,7 @@ pPγ = plot(p->pdf(Pγ, p), 0, 3, color=myblue, label="PDF of γ", xlabel="γ", 
 pPkᵢ = plot(p->pdf(Pkᵢ, p), 0, 1, color=myblue, label="PDF of kᵢ", xlabel="kᵢ", lw=2)
 
 # ╔═╡ 416ac64c-5224-4cfd-9a45-3d0766f32053
-plot(tsteps, throw, label="Nᵢ", xlabel="t", color=mygreen)
+plot(tsteps, throw, label="Nᵢ(t)", xlabel="t", color=mygreen)
 
 # ╔═╡ d17d0de2-9135-42fc-9908-e617a220a26e
 TableOfContents()
@@ -388,7 +400,8 @@ pmc2 = plotMC(throws2; title="MC scenario 2\n(sample from Pγ x Pkᵢ)")
 function plothist(throws; kwargs...)
 	x = last.(throws)
 	m = mean(x)
-	p = histogram(x, color=mygreen, xlabel="Nᵢ", label="throws day 8"; kwargs...)
+	p = histogram(x, color=mygreen, xlabel="Nᵢ", label="throws day 8",
+			xlims=(0, Nᵥ₀); kwargs...)
 	vline!(p, [m], label="simulation average", lw=3, color=myred)
 	return p
 end
@@ -414,8 +427,11 @@ Pγ_kᵢ_tradeoff = MultivariateNormal([γ_star, kᵢ_star], Σ);
 # ╔═╡ 966c67b3-4a0b-49eb-96d2-bf7b02e6cfff
 heatmap(0:0.01:3, 0:0.01:1, (p1, p2)->pdf(Pγ_kᵢ_tradeoff, [p1, p2]), c=:speed, xlabel="γ", ylabel="kᵢ", title="Joint PDF of (γ, kᵢ) (trade-off)")
 
+# ╔═╡ f190dcc9-be9e-4651-9855-8238a2a67d4a
+rand(Pγ_kᵢ_tradeoff)  # sample
+
 # ╔═╡ 1d1095f5-329b-479a-8b9f-c0c8da2435af
-throws3, _ = monte_carlo(simulate_virus, Pγ_kᵢ_tradeoff, n=100)
+throws3, θs3 = monte_carlo(simulate_virus, Pγ_kᵢ_tradeoff, n=100)
 
 # ╔═╡ d533d3f8-542d-4dd3-86e5-b0afe1f130bf
 pmc3 = plotMC(throws3; title="MC scenario 3\n(trade-off between Pγ and Pkᵢ, ρ=$ρ)")
@@ -2166,6 +2182,7 @@ version = "0.9.1+5"
 # ╟─c5bb8a6a-bcc5-11ec-2ea0-e949d3c07f5f
 # ╟─762a6406-7549-4edb-b61e-35a930bc29af
 # ╟─c91225dd-b003-4bcb-bda8-5d2d97a64751
+# ╟─8d691f22-ada3-4e34-839b-be3577e3d665
 # ╟─521a7146-6de1-450f-aaa5-8584c8ec7e10
 # ╠═4da44104-cf41-4d93-a6f3-735886e34e39
 # ╠═9e7eca24-16b2-42d4-bcc4-aecbe1779994
@@ -2230,6 +2247,7 @@ version = "0.9.1+5"
 # ╟─4ff8fde8-f9c2-4b2d-a90c-2720f992db5d
 # ╠═83ab2f8d-98f8-4307-b1a0-c3bc4c36a682
 # ╟─966c67b3-4a0b-49eb-96d2-bf7b02e6cfff
+# ╠═f190dcc9-be9e-4651-9855-8238a2a67d4a
 # ╟─10c4055b-df63-42fe-810e-69898da26aff
 # ╠═1d1095f5-329b-479a-8b9f-c0c8da2435af
 # ╟─d533d3f8-542d-4dd3-86e5-b0afe1f130bf
@@ -2238,7 +2256,7 @@ version = "0.9.1+5"
 # ╟─301046e9-05dc-4995-84d4-78530a07dcae
 # ╟─fbfbfcb6-ed7e-4100-821e-179ea06d2d5a
 # ╟─80b8e925-0358-47c9-b9ed-02662762ebee
-# ╠═8732d4f1-9765-4124-9ccd-e3ad75a57cc4
+# ╟─8732d4f1-9765-4124-9ccd-e3ad75a57cc4
 # ╟─01523754-5ca9-4b35-aef9-c06ec73ff42e
 # ╠═9aed7982-b648-496b-af74-828c88497630
 # ╠═ffb3192d-8ee8-4722-94c3-08ebd2b56ba0
