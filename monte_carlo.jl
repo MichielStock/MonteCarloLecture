@@ -17,11 +17,8 @@ end
 # ╔═╡ 4da44104-cf41-4d93-a6f3-735886e34e39
 using DifferentialEquations, Catalyst
 
-# ╔═╡ 3be525ea-3b6b-4d50-baee-eaf7a364fd22
-using Distributions
-
 # ╔═╡ ffb3192d-8ee8-4722-94c3-08ebd2b56ba0
-using PlutoUI, Plots
+using PlutoUI, Plots, Distributions
 
 # ╔═╡ c5bb8a6a-bcc5-11ec-2ea0-e949d3c07f5f
 md"""
@@ -48,7 +45,7 @@ md"![Simplified HIV virus life cycle and effect of antiretroviral drug.](https:/
 # ╔═╡ 521a7146-6de1-450f-aaa5-8584c8ec7e10
 md"""
 ## 
-Three processes are at play:
+Three processes are at play for the two states, $N_i(t)$ and $N_v(t)$:
 - infected T-cells die with a rate of $k_i$;
 - virions in the blood decay and are removed with a rate of $k_v$;
 - infected T-cells continue to produce new virions with a rate of $\gamma$.
@@ -56,9 +53,9 @@ Three processes are at play:
 
 # ╔═╡ 9e7eca24-16b2-42d4-bcc4-aecbe1779994
 virus_model = @reaction_network begin
-	kᵢ, Nᵢ --> 0  # infected cells die
-	kᵥ, Nᵥ --> 0  # virus decays
-	γ * Nᵢ, 0 --> Nᵥ  # infected cells produce new virus particles
+	kᵢ, Nᵢ --> ∅  # infected cells die
+	kᵥ, Nᵥ --> ∅  # virus particles decay
+	γ * Nᵢ, ∅ --> Nᵥ  # infected cells produce new virus particles
 end γ kᵢ kᵥ
 
 # ╔═╡ dba896f5-f282-479f-adaa-0547a217674d
@@ -75,6 +72,12 @@ We can turn these reactions into a simple system of ordinary differential equati
 
 # ╔═╡ ac8a9347-f324-40d0-9a1e-3bc13d0296c2
 odesys = convert(ODESystem, virus_model)
+
+# ╔═╡ 75f108cf-bc61-4d4c-8060-e5efb46170b6
+md"We turn it in an ODE problem by giving initial values, a time interval and the parameters"
+
+# ╔═╡ f18b7168-ceaf-4580-8435-fb76ca743202
+md"##"
 
 # ╔═╡ f7392a2a-1661-4f4d-8e5a-a072f675bae0
 md"which can be solved using standard ODE solvers:"
@@ -103,13 +106,13 @@ md"kᵥ : $(@bind kᵥ Slider(0.01:0.01:2, show_value=true, default=kᵥ_star))"
 md"with the following initial values:"
 
 # ╔═╡ d5e41310-e189-4dc4-b459-eb157366dec5
-Nᵢ₀ = 1e5  # infected cells 
+Nᵢ₀ = 1e5  # initial number of infected cells 
 
 # ╔═╡ dcb47ebe-15ae-40a4-afcf-1643184fc8c1
-Nᵥ₀ = 2e5  # virus concenctration
+Nᵥ₀ = 2e5  # initial virus concenctration
 
 # ╔═╡ 17abdbc4-36a9-4e98-9a70-c4ff017180ce
-prob = ODEProblem(odesys, [Nᵢ₀, Nᵥ₀], (0.0, 8.0), (γ, kᵢ, kᵥ))
+prob = ODEProblem(odesys, [Nᵢ₀, Nᵥ₀], (0.0, 8.0), (γ, kᵢ, kᵥ))  # from t=0 to t=8 
 
 # ╔═╡ 12d09335-7c49-4961-99af-a817b3abab46
 solution = solve(prob)
@@ -124,6 +127,8 @@ md"""
 Our model can be used to assess the *viral load in a patient after eight days of treatment*. 
 
 However, we are unsure of the true values of the parameters $\gamma, k_i, k_v$. Changes in parameter values will definitely influence the viral load at $t=8$!
+
+> How does the uncertainty on the parameters impact the viral load at $t=8$?
 """
 
 # ╔═╡ e710ff93-2560-43b3-bda6-53d2fd05eb29
@@ -152,7 +157,7 @@ $$\mathbb{E}[\phi(X)] = \int \phi(x) f(x; \theta) g(\theta) \text{d}x \text{d}\t
 
 # ╔═╡ 677424d5-73cc-4dbf-a2e7-1b6208bd55f7
 md"""
-## Example of prior distributions
+## Examples of prior distributions
 
 In our example, we only consider the uncertainty of $\gamma$ and $k_i$. 
 
@@ -160,7 +165,10 @@ For example, we model our belief on $\gamma$ with a [**log-normal distribution**
 """
 
 # ╔═╡ 0a4318e8-5dc5-47d7-a5cf-a69bd0874d52
-Pγ = LogNormal(log(γ_star), 0.3)
+Pγ = LogNormal(log(γ_star), 0.25)
+
+# ╔═╡ 9e3dd0c4-df28-44e7-bb6f-e824471f959a
+md"##"
 
 # ╔═╡ 1fd88391-c494-4c10-92a8-1130c4cb0ad4
 md"Sampling from distribution object can easily be done using the `rand` function."
@@ -214,7 +222,7 @@ md"## Implementation of the Monte-Carlo method"
 
 # ╔═╡ 8097a3b6-433b-4fe2-ba8b-dd2358b16cc5
 """
-	monte_carlo(simulator, Pθ[; n=1000])
+	monte_carlo(simulator, Pθ [; n=1000])
 
 Performs a Monte-Carlo simulation using a given `simulator` and a prior distribution
 for the parameter(s) `Pθ` using `n` samples. Returns both the throws and the 
@@ -229,6 +237,8 @@ end;
 # ╔═╡ 0aeb0716-5723-4ad7-a48a-c9c590739279
 md"""
 ## Simulator for the HIV model
+
+We wrap the virus model in a function for convience.
 """
 
 # ╔═╡ c3281567-c90d-4417-9996-c9ed13ec07fe
@@ -237,6 +247,9 @@ function simulate_virus(γ=γ_star, kᵢ=kᵢ_star, kᵥ=kᵥ_star)
 	prob = ODEProblem(odesys, [Nᵢ₀, Nᵥ₀], (0.0, 8.0), (γ, kᵢ, kᵥ))
 	return solve(prob, saveat=tsteps)[2,:]
 end;
+
+# ╔═╡ 4abce0c0-e4a9-47af-b96f-3c4d08e45a29
+md"##"
 
 # ╔═╡ c82940e7-e895-4e0e-b15e-2b68a2d320ce
 throw = simulate_virus(0.4, 0.7, 0.3)  # single simulation
@@ -266,6 +279,9 @@ Monte-Carlo methods trivially work with two or more variables.
 If we assume that the $\gamma$ and $k_i$ are *independent*, we can use multiply their PDFs to obtain the **joint distribution**. 
 """
 
+# ╔═╡ 3dfdd191-c8bb-43ae-9911-67405bbae1c8
+md"##"
+
 # ╔═╡ 4520ea29-b9b9-4638-b219-055025051c7b
 Pγ_kᵢ_mult = product_distribution([Pγ, Pkᵢ])
 
@@ -280,6 +296,9 @@ md"## Results scenario 2"
 
 # ╔═╡ 596411ac-2a77-4e73-86c7-62edf331528c
 throws2, θs2 = monte_carlo(simulate_virus, Pγ_kᵢ_mult, n=100)
+
+# ╔═╡ 93a0f0df-1e20-4ad1-9407-98d4b2a04bcd
+md"##"
 
 # ╔═╡ 60a5bef6-45e9-4604-8896-9bd715f8935b
 md"""
@@ -296,10 +315,13 @@ We can model this trade-off between $\gamma$ and $k_i$ using a **multivariate no
 """
 
 # ╔═╡ af97bff3-2890-41b9-86f4-49d173c488fe
-md"correlation ρ : $(@bind ρ Slider(-0.95:0.05:0.95, show_value=true, default=-0.85))"
+md"correlation ρ : $(@bind ρ Slider(-0.95:0.05:0.95, show_value=true, default=0.85))"
 
 # ╔═╡ 10c4055b-df63-42fe-810e-69898da26aff
 md"## Results scenario 3"
+
+# ╔═╡ f2032c75-f6e4-45ec-83c6-8be2cf470a60
+md"##"
 
 # ╔═╡ 78e75d34-5dff-4368-9b05-57182d331879
 md"## Summary of the three scenarios"
@@ -310,8 +332,7 @@ md"""
 
 - Very general method for uncertainty analysis, works with any type of model.
 - Easy to implement.
-- Easy to work with dependent variables as inputs.
-- Might require a very large number of simulations $n$ to fully cover the parameter space. Need 
+- Might require a very large number of simulations $n$ to fully cover the parameter space. Can be dealt with more advanced variants, e.g. *Latin hypercube sampling*. 
 - Trivial to parallelize on a cluster (**[embarrassingly parallelizable algorithm](https://en.wikipedia.org/wiki/Embarrassingly_parallel)**).
 
 """
@@ -361,10 +382,13 @@ pPγ = plot(p->pdf(Pγ, p), 0, 3, color=myblue, label="PDF of γ", xlabel="γ", 
 pPkᵢ = plot(p->pdf(Pkᵢ, p), 0, 1, color=myblue, label="PDF of kᵢ", xlabel="kᵢ", lw=2)
 
 # ╔═╡ 416ac64c-5224-4cfd-9a45-3d0766f32053
-plot(tsteps, throw, label="Nᵢ(t)", xlabel="t", color=mygreen)
+plot(tsteps, throw, label="Nᵥ(t)", xlabel="t", color=mygreen)
 
 # ╔═╡ d17d0de2-9135-42fc-9908-e617a220a26e
-TableOfContents()
+md"show table of contents: $(@bind toc CheckBox())"
+
+# ╔═╡ aeb0bbc4-04f7-402d-bf07-b4e21c69f5b7
+toc && TableOfContents()
 
 # ╔═╡ 30042dde-f2ba-40d5-b288-f576a93b94e7
 md"HIV model implemented as a standard ODE."
@@ -401,7 +425,7 @@ function plothist(throws; kwargs...)
 	x = last.(throws)
 	m = mean(x)
 	p = histogram(x, color=mygreen, xlabel="Nᵢ", label="throws day 8",
-			xlims=(0, Nᵥ₀); kwargs...)
+			xlims=(0, Nᵥ₀/2); kwargs...)
 	vline!(p, [m], label="simulation average", lw=3, color=myred)
 	return p
 end
@@ -1557,9 +1581,9 @@ uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [[deps.Qt5Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "xkbcommon_jll"]
-git-tree-sha1 = "ad368663a5e20dbb8d6dc2fddeefe4dae0781ae8"
+git-tree-sha1 = "c6c0f690d0cc7caddb74cef7aa847b824a16b256"
 uuid = "ea2cea3b-5b76-57ae-a6ef-0a8af62496e1"
-version = "5.15.3+0"
+version = "5.15.3+1"
 
 [[deps.QuadGK]]
 deps = ["DataStructures", "LinearAlgebra"]
@@ -2190,8 +2214,10 @@ version = "0.9.1+5"
 # ╠═05a8b667-1c2c-4f37-b66a-2dc06767a417
 # ╟─83c67a53-c536-48d8-8a05-02403a08851a
 # ╠═ac8a9347-f324-40d0-9a1e-3bc13d0296c2
-# ╟─f7392a2a-1661-4f4d-8e5a-a072f675bae0
+# ╟─75f108cf-bc61-4d4c-8060-e5efb46170b6
 # ╠═17abdbc4-36a9-4e98-9a70-c4ff017180ce
+# ╟─f18b7168-ceaf-4580-8435-fb76ca743202
+# ╟─f7392a2a-1661-4f4d-8e5a-a072f675bae0
 # ╠═12d09335-7c49-4961-99af-a817b3abab46
 # ╟─1ad379a9-4b92-4e0f-a111-bd9efa1641d2
 # ╠═b0559ba1-4fb9-4897-a502-f8db5e18c72b
@@ -2208,9 +2234,9 @@ version = "0.9.1+5"
 # ╟─e710ff93-2560-43b3-bda6-53d2fd05eb29
 # ╟─83f338bf-80c3-4688-b786-0b42a5de5c86
 # ╟─677424d5-73cc-4dbf-a2e7-1b6208bd55f7
-# ╠═3be525ea-3b6b-4d50-baee-eaf7a364fd22
 # ╠═0a4318e8-5dc5-47d7-a5cf-a69bd0874d52
 # ╟─cdc5d429-299e-499b-badf-f94192c34cba
+# ╟─9e3dd0c4-df28-44e7-bb6f-e824471f959a
 # ╟─1fd88391-c494-4c10-92a8-1130c4cb0ad4
 # ╠═2326a58e-aa75-43bc-9a21-45395e4f909c
 # ╠═4fc43c3a-4ddb-41b7-8597-d6536177f8fb
@@ -2225,6 +2251,7 @@ version = "0.9.1+5"
 # ╠═8097a3b6-433b-4fe2-ba8b-dd2358b16cc5
 # ╟─0aeb0716-5723-4ad7-a48a-c9c590739279
 # ╠═c3281567-c90d-4417-9996-c9ed13ec07fe
+# ╟─4abce0c0-e4a9-47af-b96f-3c4d08e45a29
 # ╠═c82940e7-e895-4e0e-b15e-2b68a2d320ce
 # ╠═416ac64c-5224-4cfd-9a45-3d0766f32053
 # ╟─cc06715d-2d24-40c3-a1e9-bdf652df1260
@@ -2234,12 +2261,14 @@ version = "0.9.1+5"
 # ╠═f6ed2867-866b-489d-a6cc-d4f3748427b6
 # ╟─c72bfbde-7dcb-499c-a8f3-42b26cfbeabb
 # ╟─d425b961-6252-4eb4-9dec-215f7b4f2c69
+# ╟─3dfdd191-c8bb-43ae-9911-67405bbae1c8
 # ╠═4520ea29-b9b9-4638-b219-055025051c7b
 # ╟─3fd53e0d-64a5-4ca3-a19c-c7cc2393854c
 # ╠═92aa8629-31a4-4af8-b45c-5b16d10aef4f
 # ╟─08699316-9c75-4339-a802-9086008aee31
 # ╠═596411ac-2a77-4e73-86c7-62edf331528c
-# ╠═b9c0f3c6-bfc6-4a11-b67d-abdd91be33d9
+# ╟─b9c0f3c6-bfc6-4a11-b67d-abdd91be33d9
+# ╟─93a0f0df-1e20-4ad1-9407-98d4b2a04bcd
 # ╠═e030e25d-b3e3-4607-ac30-ff549de8c52b
 # ╟─60a5bef6-45e9-4604-8896-9bd715f8935b
 # ╟─ea61971a-ef44-403c-b886-a37bfdcd0798
@@ -2251,6 +2280,7 @@ version = "0.9.1+5"
 # ╟─10c4055b-df63-42fe-810e-69898da26aff
 # ╠═1d1095f5-329b-479a-8b9f-c0c8da2435af
 # ╟─d533d3f8-542d-4dd3-86e5-b0afe1f130bf
+# ╟─f2032c75-f6e4-45ec-83c6-8be2cf470a60
 # ╟─4710bb45-a249-46da-b5cb-fe5af106fd72
 # ╟─78e75d34-5dff-4368-9b05-57182d331879
 # ╟─301046e9-05dc-4995-84d4-78530a07dcae
@@ -2260,7 +2290,8 @@ version = "0.9.1+5"
 # ╟─01523754-5ca9-4b35-aef9-c06ec73ff42e
 # ╠═9aed7982-b648-496b-af74-828c88497630
 # ╠═ffb3192d-8ee8-4722-94c3-08ebd2b56ba0
-# ╠═d17d0de2-9135-42fc-9908-e617a220a26e
+# ╟─d17d0de2-9135-42fc-9908-e617a220a26e
+# ╟─aeb0bbc4-04f7-402d-bf07-b4e21c69f5b7
 # ╟─30042dde-f2ba-40d5-b288-f576a93b94e7
 # ╠═92a5304a-c26b-4bb8-ba58-59c28f4caa72
 # ╠═0293d9be-4d85-4829-a1b7-6f341c9f694b
