@@ -4,7 +4,7 @@ Michiel Stock
 
 May 2022
 
-This page contains my slides for the trial lecture on Monte Carlo methods. You can access the HTML slides [here](LINK).
+This page contains my slides for the trial lecture on Monte Carlo methods. You can access the HTML slides [here](monte_carlo.jl.html).
 
 ## Running the notebook
 
@@ -13,6 +13,6 @@ For those who want to run the notebook live with active code, these must install
 1. Download and install [Julia for your system](https://julialang.org/downloads/). Open it.
 2. Install Pluto by copy-pasting the following instruction in the REPL: `using Pkg; Pkg.add("Pluto")`. This will take two minutes.
 3. Launch Pluto by copy-pasting `using Pluto; Pluto.run()`. It will open in your browser.
-4. In the slot "open for file" past the link to the notebook: ``
+4. In the slot "open for file" past the link to the notebook: `https://github.com/MichielStock/MonteCarloLecture/blob/main/monte_carlo.jl`
 
 Your system will download the notebook and install all required packages automatically. The first time, this might take up to ten minutes.
