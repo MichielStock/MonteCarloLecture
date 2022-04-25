@@ -26,18 +26,27 @@ md"""
 
 **[Michiel Stock](michielfmstock@gmail.com)**
 
-![](https://github.com/MichielStock/MonteCarloLecture/blob/main/figs/dice.jpg?raw=true)
+![](https://github.com/MichielStock/MonteCarloLecture/blob/main/figs/dice.jpg?raw=true =50x)
 """
 
 # ╔═╡ 762a6406-7549-4edb-b61e-35a930bc29af
 html"<button onclick='present()'>present</button>"
 
+# ╔═╡ 32135aac-7aae-45a7-8caa-ec842cf421ed
+md"""
+## Case study: HIV treatment
+
+We study a simple model of treating HIV with an antiretroviral drug:
+- we model the number of infected cells and the viral load for *8 days after treatment*;
+- the treatment is a success if the *initial viral load is reduced by a factor of 10!*
+
+> How to deal with parameter uncertainty and biological variation?
+"""
+
 # ╔═╡ c91225dd-b003-4bcb-bda8-5d2d97a64751
 md"""
-## Case study: modelling HIV progression
-
-As a running example, we consider a simplified model for the treatment of HIV. We track the number of infected T-cells ($N_i$) and the number of virus particles ($N_v$) after treatment with a virus blocker such as ritonavir or zidovudine. Such treatments prevent the virus from infecting new T-cells, resulting in the slow removal of the virions in the body.
-"""
+## The HIV model
+"""# As a running example, we consider a simplified model for the treatment of HIV. We track the number of infected T-cells ($N_i$) and the number of virus particles ($N_v$) after treatment with a virus blocker such as ritonavir or zidovudine. Such treatments prevent the virus from infecting new T-cells, resulting in the slow removal of the virions in the body.
 
 # ╔═╡ 8d691f22-ada3-4e34-839b-be3577e3d665
 md"![Simplified HIV virus life cycle and effect of antiretroviral drug.](https://github.com/MichielStock/MonteCarloLecture/blob/main/figs/virus_diagram.png?raw=true)"
@@ -57,12 +66,6 @@ virus_model = @reaction_network begin
 	kᵥ, Nᵥ --> ∅  # virus particles decay
 	γ * Nᵢ, ∅ --> Nᵥ  # infected cells produce new virus particles
 end γ kᵢ kᵥ
-
-# ╔═╡ dba896f5-f282-479f-adaa-0547a217674d
-species(virus_model)
-
-# ╔═╡ 05a8b667-1c2c-4f37-b66a-2dc06767a417
-parameters(virus_model)
 
 # ╔═╡ 83c67a53-c536-48d8-8a05-02403a08851a
 md"""
@@ -91,7 +94,7 @@ Simulation of the dynamics of number of infected cells ($N_i$) and the viral loa
 md"## Default parameter values"
 
 # ╔═╡ f2b9820c-5ed9-47fc-90a7-da8259f3a9f5
-γ_star , kᵢ_star , kᵥ_star = 1.4, 0.4, log2(1.6)
+γ_star , kᵢ_star , kᵥ_star = 1.4, 0.5, log2(1.6)
 
 # ╔═╡ fee99948-8d30-479c-ad59-b28571f7ecc5
 md"γ : $(@bind γ Slider(0.01:0.01:3, show_value=true, default=γ_star))"
@@ -120,44 +123,9 @@ solution = solve(prob)
 # ╔═╡ 40ff04d8-4c0b-4b7f-86db-4306871f81da
 tsteps = 0:0.5:8
 
-# ╔═╡ 32135aac-7aae-45a7-8caa-ec842cf421ed
-md"""
-## Goal of the HIV model
-
-Our model can be used to assess the *viral load in a patient after eight days of treatment*. 
-
-However, we are unsure of the true values of the parameters $\gamma, k_i, k_v$. Changes in parameter values will definitely influence the viral load at $t=8$!
-
-> How does the uncertainty on the parameters impact the viral load at $t=8$?
-"""
-
-# ╔═╡ e710ff93-2560-43b3-bda6-53d2fd05eb29
-md"""
-## Dealing with uncertainty
-
-In general, our model states $X$ depend on the parameters $\theta$ according to $P(X\mid \theta)$. We denote its probability density function (PDF) by $f(x; \theta)$.
-
-When the parameters $\theta$ are *uncertain*, they follow a **prior distribution** $P(\theta)$. We denote its PDF by $g(\theta)$.
-
-> Note: We are being slightly more general, our current HIV model is deterministic, but can easily be extended to include stochasticity.
-"""
-
-# ╔═╡ 83f338bf-80c3-4688-b786-0b42a5de5c86
-md"""
-## 
-We are usually interested in the distribution of some quantity $\phi(X)$ (e.g. viral load at $t=8$).
-
-The expected value of this quantity is given by
-
-$$\mathbb{E}[\phi(X)] = \int \phi(x) f(x; \theta) g(\theta) \text{d}x \text{d}\theta\,.$$
-
-
-
-"""
-
 # ╔═╡ 677424d5-73cc-4dbf-a2e7-1b6208bd55f7
 md"""
-## Examples of prior distributions
+## Prior distributions of the parameters
 
 In our example, we only consider the uncertainty of $\gamma$ and $k_i$. 
 
@@ -170,11 +138,11 @@ Pγ = LogNormal(log(γ_star), 0.25)
 # ╔═╡ 9e3dd0c4-df28-44e7-bb6f-e824471f959a
 md"##"
 
-# ╔═╡ 1fd88391-c494-4c10-92a8-1130c4cb0ad4
-md"Sampling from distribution object can easily be done using the `rand` function."
-
 # ╔═╡ 2326a58e-aa75-43bc-9a21-45395e4f909c
 rand(Pγ)  # sample 1 data point
+
+# ╔═╡ 1fd88391-c494-4c10-92a8-1130c4cb0ad4
+md"Sampling from distribution object can easily be done using the `rand` function."
 
 # ╔═╡ 4fc43c3a-4ddb-41b7-8597-d6536177f8fb
 rand(Pγ, 5)  # sample 5 data points 
@@ -193,6 +161,35 @@ For the distribution of $k_i$, we opt for a simple [**triangular distribution**]
 
 # ╔═╡ 98bb3559-3d5f-42b2-8646-cbb2d369df8e
 Pkᵢ = TriangularDist(kᵢ_star/4, 7kᵢ_star/4)
+
+# ╔═╡ e710ff93-2560-43b3-bda6-53d2fd05eb29
+md"""
+## Dealing with uncertainty
+
+Our model states $X$ depend on the parameters $\theta$ according to $P(X\mid \theta)$. We denote its probability density function (PDF) by $f(x; \theta)$.
+
+When the parameters $\theta$ are *uncertain*, they follow a **prior distribution** $P(\theta)$. We denote its PDF by $g(\theta)$.
+
+> Note: We are being slightly more general, our current HIV model is deterministic, but can easily be extended to include stochasticity.
+"""
+
+# ╔═╡ 83f338bf-80c3-4688-b786-0b42a5de5c86
+md"""
+## 
+We are usually interested in the distribution of some quantity $\phi(X)$.
+
+The expected value of this quantity is given by
+
+$$\mathbb{E}[\phi(X)] = \int \phi(x) f(x; \theta) g(\theta) \text{d}x \text{d}\theta\,.$$
+
+"""
+
+# ╔═╡ cec3d221-04b2-4f3a-ad9a-e4bd75207f97
+md"""##
+In casu, $\phi$ is the indicator function that the viral load at $t=8$ is reduced by a factor of 10:"""
+
+# ╔═╡ 43b9d5eb-592e-4fb3-b4a7-70f3b6aa9b07
+ϕ(viral_load) = last(viral_load) < Nᵥ₀ / 10;
 
 # ╔═╡ 0aabf6aa-6452-4ecd-ba32-878719f8879f
 md"""
@@ -252,7 +249,10 @@ end;
 md"##"
 
 # ╔═╡ c82940e7-e895-4e0e-b15e-2b68a2d320ce
-throw = simulate_virus(0.4, 0.7, 0.3)  # single simulation
+throw = simulate_virus(0.4, 0.7, 0.3)  # single simulation of viral load
+
+# ╔═╡ df0342ad-4a92-445b-b52c-c69cae4503de
+ϕ(throw)  # outcome of the single simulation
 
 # ╔═╡ cc06715d-2d24-40c3-a1e9-bdf652df1260
 md"""
@@ -269,6 +269,9 @@ md"##"
 
 # ╔═╡ f6ed2867-866b-489d-a6cc-d4f3748427b6
 last.(throws1)  # get viral load at end point 
+
+# ╔═╡ 029a5d10-7b34-4d04-b93f-c8a9986bb584
+Eϕ1 = mean(ϕ, throws1)
 
 # ╔═╡ d425b961-6252-4eb4-9dec-215f7b4f2c69
 md"""
@@ -300,13 +303,16 @@ throws2, θs2 = monte_carlo(simulate_virus, Pγ_kᵢ_mult, n=100)
 # ╔═╡ 93a0f0df-1e20-4ad1-9407-98d4b2a04bcd
 md"##"
 
+# ╔═╡ 99465958-ec81-480e-bf87-fac976669ba7
+Eϕ2 = mean(ϕ, throws2)
+
 # ╔═╡ 60a5bef6-45e9-4604-8896-9bd715f8935b
 md"""
 ## Scenario 3: uncertainty on $\gamma$ and $k_i$ with trade-off
 
 Biologically speaking, it is not realistic that the virion production rate $\gamma$ and the clearance rate for cells $k_i$ are independent. 
 
-> Higher virulence will result in higher mortality of the infected cells with smaller virion production. There is a **trade-off** between $\gamma$ and $k_i$.
+> Higher virulence will result in higher mortality of the infected cells with larger virion production. There is a **trade-off** between $\gamma$ and $k_i$.
 """
 
 # ╔═╡ ea61971a-ef44-403c-b886-a37bfdcd0798
@@ -315,7 +321,7 @@ We can model this trade-off between $\gamma$ and $k_i$ using a **multivariate no
 """
 
 # ╔═╡ af97bff3-2890-41b9-86f4-49d173c488fe
-md"correlation ρ : $(@bind ρ Slider(-0.95:0.05:0.95, show_value=true, default=0.85))"
+md"correlation ρ : $(@bind ρ Slider(-0.95:0.05:0.95, show_value=true, default=0.75))"
 
 # ╔═╡ 10c4055b-df63-42fe-810e-69898da26aff
 md"## Results scenario 3"
@@ -408,9 +414,11 @@ md"Some plotting functions."
 
 # ╔═╡ c3409be7-d63c-4b8c-9829-6ee91a4c75b0
 function plotMC(throws; kwargs...)
-	p = plot(solution, vars=[2], lw=3, color=myorange; kwargs...)
+	p = plot(; kwargs...)
+	#plot!(p, solution, vars=[2], lw=3, color=myorange)
 	plot!(p, tsteps, hcat(throws...), label="", alpha=0.3, color=mygreen)
 	plot!(p, tsteps, mean(throws), label="simulation average", color=myred, lw=2)
+	hline!([Nᵥ₀ / 10], label="Nᵥ₀ / 10", color=myyellow, lw=2)
 	return p
 end
 
@@ -424,17 +432,20 @@ pmc2 = plotMC(throws2; title="MC scenario 2\n(sample from Pγ x Pkᵢ)")
 function plothist(throws; kwargs...)
 	x = last.(throws)
 	m = mean(x)
-	p = histogram(x, color=mygreen, xlabel="Nᵢ", label="throws day 8",
+	p = plot(xlabel="Nᵢ", label="throws day 8",
 			xlims=(0, Nᵥ₀/2); kwargs...)
-	vline!(p, [m], label="simulation average", lw=3, color=myred)
+	any(ϕ, x) && histogram!(p, filter(ϕ, x), color=mygreen, )
+	any(!ϕ, x) && histogram!(p, filter(!ϕ, x), color=mygreen, alpha=0.5, label="")
+	vline!(p, [m], label="simulation average", lw=2, color=myred)
+	vline!(p, [Nᵥ₀ / 10], label="Nᵥ₀ / 10", lw=2, color=myyellow)
 	return p
 end
 
 # ╔═╡ c72bfbde-7dcb-499c-a8f3-42b26cfbeabb
-phist1 = plothist(throws1, title="Viral load at t=8\n(scenario 1)")
+phist1 = plothist(throws1, title="Viral load at t=8\n(scenario 1: E[ϕ]≈$Eϕ1)")
 
 # ╔═╡ e030e25d-b3e3-4607-ac30-ff549de8c52b
-phist2 = plothist(throws2, title="Viral load at t=8\n(scenario 2)")
+phist2 = plothist(throws2, title="Viral load at t=8\n(scenario 2: E[ϕ]≈$Eϕ2)")
 
 # ╔═╡ 651b97ca-5cbb-447e-a09c-9d33a37fb0da
 md"Standard deviations of the $\gamma$ and $k_i$."
@@ -460,11 +471,29 @@ throws3, θs3 = monte_carlo(simulate_virus, Pγ_kᵢ_tradeoff, n=100)
 # ╔═╡ d533d3f8-542d-4dd3-86e5-b0afe1f130bf
 pmc3 = plotMC(throws3; title="MC scenario 3\n(trade-off between Pγ and Pkᵢ, ρ=$ρ)")
 
+# ╔═╡ 130b6ce5-0147-4af6-a184-e17eaef50104
+Eϕ3 = mean(ϕ, throws3)
+
 # ╔═╡ 4710bb45-a249-46da-b5cb-fe5af106fd72
-phist3 = plothist(throws3, title="Viral load at t=8\n(scenario 3)")
+phist3 = plothist(throws3, title="Viral load at t=8\n(scenario 3: E[ϕ]≈$Eϕ3)")
 
 # ╔═╡ 301046e9-05dc-4995-84d4-78530a07dcae
 plot(pmc1, phist1, pmc2, phist2, pmc3, phist3, size=(1200, 1000), legend=false, layout=(3, 2))
+
+# ╔═╡ d79ebd96-f745-4f30-920b-5d2652ed5d78
+md"Below is an ilustration of the same model, but solved as a Jump Diffusion equation, simulating one day at the time." 
+
+# ╔═╡ 85e16937-3bfc-4213-a2d6-9a43a49567a1
+dprob = DiscreteProblem(virus_model, Int[Nᵢ₀, Nᵥ₀], (0.0, 8.0), (γ, kᵢ, kᵥ))
+
+# ╔═╡ fbd57014-5218-4992-bb8e-4431677899dc
+jprob = JumpProblem(virus_model, dprob, Direct(), save_positions=(false,false))
+
+# ╔═╡ 30cc2660-00ca-4308-b74e-018e67566fc3
+sol_discrete = solve(jprob, SSAStepper(), saveat=1)
+
+# ╔═╡ 5df01611-90ee-44a5-b735-ce406e3f8600
+plot(sol_discrete)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2205,13 +2234,12 @@ version = "0.9.1+5"
 # ╔═╡ Cell order:
 # ╟─c5bb8a6a-bcc5-11ec-2ea0-e949d3c07f5f
 # ╟─762a6406-7549-4edb-b61e-35a930bc29af
+# ╟─32135aac-7aae-45a7-8caa-ec842cf421ed
 # ╟─c91225dd-b003-4bcb-bda8-5d2d97a64751
 # ╟─8d691f22-ada3-4e34-839b-be3577e3d665
 # ╟─521a7146-6de1-450f-aaa5-8584c8ec7e10
 # ╠═4da44104-cf41-4d93-a6f3-735886e34e39
 # ╠═9e7eca24-16b2-42d4-bcc4-aecbe1779994
-# ╠═dba896f5-f282-479f-adaa-0547a217674d
-# ╠═05a8b667-1c2c-4f37-b66a-2dc06767a417
 # ╟─83c67a53-c536-48d8-8a05-02403a08851a
 # ╠═ac8a9347-f324-40d0-9a1e-3bc13d0296c2
 # ╟─75f108cf-bc61-4d4c-8060-e5efb46170b6
@@ -2230,21 +2258,22 @@ version = "0.9.1+5"
 # ╠═d5e41310-e189-4dc4-b459-eb157366dec5
 # ╠═dcb47ebe-15ae-40a4-afcf-1643184fc8c1
 # ╠═40ff04d8-4c0b-4b7f-86db-4306871f81da
-# ╟─32135aac-7aae-45a7-8caa-ec842cf421ed
-# ╟─e710ff93-2560-43b3-bda6-53d2fd05eb29
-# ╟─83f338bf-80c3-4688-b786-0b42a5de5c86
 # ╟─677424d5-73cc-4dbf-a2e7-1b6208bd55f7
 # ╠═0a4318e8-5dc5-47d7-a5cf-a69bd0874d52
 # ╟─cdc5d429-299e-499b-badf-f94192c34cba
 # ╟─9e3dd0c4-df28-44e7-bb6f-e824471f959a
-# ╟─1fd88391-c494-4c10-92a8-1130c4cb0ad4
 # ╠═2326a58e-aa75-43bc-9a21-45395e4f909c
+# ╟─1fd88391-c494-4c10-92a8-1130c4cb0ad4
 # ╠═4fc43c3a-4ddb-41b7-8597-d6536177f8fb
 # ╟─fe29dbc0-4ae5-43f4-9fa6-b20b37dfe4cb
 # ╠═0d9bdac2-7322-4966-9a8c-dfcbee3327ef
 # ╟─e1b418ed-5e80-4be7-b21b-6a0930811ad9
 # ╠═98bb3559-3d5f-42b2-8646-cbb2d369df8e
 # ╟─8f84de4a-595c-4c36-856a-858c7a95ee9a
+# ╟─e710ff93-2560-43b3-bda6-53d2fd05eb29
+# ╟─83f338bf-80c3-4688-b786-0b42a5de5c86
+# ╟─cec3d221-04b2-4f3a-ad9a-e4bd75207f97
+# ╠═43b9d5eb-592e-4fb3-b4a7-70f3b6aa9b07
 # ╟─0aabf6aa-6452-4ecd-ba32-878719f8879f
 # ╟─089810ee-85ea-4d7e-9305-c57b25eb421e
 # ╟─fbee599e-5784-4c77-bcc9-c3996536e4df
@@ -2254,12 +2283,14 @@ version = "0.9.1+5"
 # ╟─4abce0c0-e4a9-47af-b96f-3c4d08e45a29
 # ╠═c82940e7-e895-4e0e-b15e-2b68a2d320ce
 # ╠═416ac64c-5224-4cfd-9a45-3d0766f32053
+# ╠═df0342ad-4a92-445b-b52c-c69cae4503de
 # ╟─cc06715d-2d24-40c3-a1e9-bdf652df1260
 # ╠═d7c7d945-9916-431e-84ae-4e545137cbaa
 # ╟─d102ebab-243a-4a3b-b6c3-22e10c9dd4e3
 # ╟─b14af78b-548b-458b-a5f5-9e4c43aabd0b
 # ╠═f6ed2867-866b-489d-a6cc-d4f3748427b6
 # ╟─c72bfbde-7dcb-499c-a8f3-42b26cfbeabb
+# ╠═029a5d10-7b34-4d04-b93f-c8a9986bb584
 # ╟─d425b961-6252-4eb4-9dec-215f7b4f2c69
 # ╟─3dfdd191-c8bb-43ae-9911-67405bbae1c8
 # ╠═4520ea29-b9b9-4638-b219-055025051c7b
@@ -2269,7 +2300,8 @@ version = "0.9.1+5"
 # ╠═596411ac-2a77-4e73-86c7-62edf331528c
 # ╟─b9c0f3c6-bfc6-4a11-b67d-abdd91be33d9
 # ╟─93a0f0df-1e20-4ad1-9407-98d4b2a04bcd
-# ╠═e030e25d-b3e3-4607-ac30-ff549de8c52b
+# ╟─e030e25d-b3e3-4607-ac30-ff549de8c52b
+# ╠═99465958-ec81-480e-bf87-fac976669ba7
 # ╟─60a5bef6-45e9-4604-8896-9bd715f8935b
 # ╟─ea61971a-ef44-403c-b886-a37bfdcd0798
 # ╟─af97bff3-2890-41b9-86f4-49d173c488fe
@@ -2282,6 +2314,7 @@ version = "0.9.1+5"
 # ╟─d533d3f8-542d-4dd3-86e5-b0afe1f130bf
 # ╟─f2032c75-f6e4-45ec-83c6-8be2cf470a60
 # ╟─4710bb45-a249-46da-b5cb-fe5af106fd72
+# ╠═130b6ce5-0147-4af6-a184-e17eaef50104
 # ╟─78e75d34-5dff-4368-9b05-57182d331879
 # ╟─301046e9-05dc-4995-84d4-78530a07dcae
 # ╟─fbfbfcb6-ed7e-4100-821e-179ea06d2d5a
@@ -2300,5 +2333,10 @@ version = "0.9.1+5"
 # ╠═d92e75b7-aa53-4746-bfb1-6bd1481484b6
 # ╟─651b97ca-5cbb-447e-a09c-9d33a37fb0da
 # ╠═b432c3e3-628d-4cc8-8643-bc8e755147e0
+# ╟─d79ebd96-f745-4f30-920b-5d2652ed5d78
+# ╠═85e16937-3bfc-4213-a2d6-9a43a49567a1
+# ╠═fbd57014-5218-4992-bb8e-4431677899dc
+# ╠═30cc2660-00ca-4308-b74e-018e67566fc3
+# ╠═5df01611-90ee-44a5-b735-ce406e3f8600
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
