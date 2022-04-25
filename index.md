@@ -1,37 +1,18 @@
-## Welcome to GitHub Pages
+## Lecture Monte Carlo methods for uncertainty
 
-You can use the [editor on GitHub](https://github.com/MichielStock/MonteCarloLecture/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Michiel Stock
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+May 2022
 
-### Markdown
+This page contains my slides for the trial lecture on Monte Carlo methods. You can access the HTML slides [here](LINK).
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+## Running the notebook
 
-```markdown
-Syntax highlighted code block
+For those who want to run the notebook live with active code, these must install the Pluto environment in Julia. This process takes 10 minutes (2 minutes active time).
 
-# Header 1
-## Header 2
-### Header 3
+1. Download and install [Julia for your system](https://julialang.org/downloads/). Open it.
+2. Install Pluto by copy-pasting the following instruction in the REPL: `using Pkg; Pkg.add("Pluto")`. This will take two minutes.
+3. Launch Pluto by copy-pasting `using Pluto; Pluto.run()`. It will open in your browser.
+4. In the slot "open for file" past the link to the notebook: ``
 
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/MichielStock/MonteCarloLecture/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+Your system will download the notebook and install all required packages automatically. The first time, this might take up to ten minutes.
