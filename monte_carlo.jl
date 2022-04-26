@@ -24,7 +24,7 @@ using PlutoUI, Plots, Distributions
 md"""
 # Monte Carlo methods for uncertainty quantification
 
-**[Michiel Stock](michielfmstock@gmail.com)**
+dr. ir. **[Michiel Stock](mailto:michielfmstock@gmail.com)**
 
 ![](https://github.com/MichielStock/MonteCarloLecture/blob/main/figs/dice.jpg?raw=true =50x)
 """
@@ -61,7 +61,7 @@ Three processes are at play for the two states, $N_i(t)$ and $N_v(t)$:
 """
 
 # ╔═╡ 9e7eca24-16b2-42d4-bcc4-aecbe1779994
-virus_model = @reaction_network begin
+virus_system = @reaction_network begin
 	kᵢ, Nᵢ --> ∅  # infected cells die
 	kᵥ, Nᵥ --> ∅  # virus particles decay
 	γ * Nᵢ, ∅ --> Nᵥ  # infected cells produce new virus particles
@@ -74,7 +74,7 @@ We can turn these reactions into a simple system of ordinary differential equati
 """
 
 # ╔═╡ ac8a9347-f324-40d0-9a1e-3bc13d0296c2
-odesys = convert(ODESystem, virus_model)
+odesys = convert(ODESystem, virus_system)
 
 # ╔═╡ 75f108cf-bc61-4d4c-8060-e5efb46170b6
 md"We turn it in an ODE problem by giving initial values, a time interval and the parameters"
@@ -90,38 +90,8 @@ md"##
 Simulation of the dynamics of number of infected cells ($N_i$) and the viral load ($N_v$).
 "
 
-# ╔═╡ 96a5db35-fa55-4c63-9a90-6f67f99f8853
-md"## Default parameter values"
-
-# ╔═╡ f2b9820c-5ed9-47fc-90a7-da8259f3a9f5
-γ_star , kᵢ_star , kᵥ_star = 1.4, 0.5, log2(1.6)
-
-# ╔═╡ fee99948-8d30-479c-ad59-b28571f7ecc5
-md"γ : $(@bind γ Slider(0.01:0.01:3, show_value=true, default=γ_star))"
-
-# ╔═╡ cc6ac990-4e84-49ff-92f1-724da031170f
-md"kᵢ : $(@bind kᵢ Slider(0.01:0.01:2, show_value=true, default=kᵢ_star))"
-
-# ╔═╡ 3361077a-91d0-4d5a-80b9-c0922f07f85c
-md"kᵥ : $(@bind kᵥ Slider(0.01:0.01:2, show_value=true, default=kᵥ_star))"
-
-# ╔═╡ bfe04fd1-6d79-47ce-8ac3-4520082ebd1b
-md"with the following initial values:"
-
-# ╔═╡ d5e41310-e189-4dc4-b459-eb157366dec5
-Nᵢ₀ = 1e5  # initial number of infected cells 
-
-# ╔═╡ dcb47ebe-15ae-40a4-afcf-1643184fc8c1
-Nᵥ₀ = 2e5  # initial virus concenctration
-
-# ╔═╡ 17abdbc4-36a9-4e98-9a70-c4ff017180ce
-prob = ODEProblem(odesys, [Nᵢ₀, Nᵥ₀], (0.0, 8.0), (γ, kᵢ, kᵥ))  # from t=0 to t=8 
-
-# ╔═╡ 12d09335-7c49-4961-99af-a817b3abab46
-solution = solve(prob)
-
-# ╔═╡ 40ff04d8-4c0b-4b7f-86db-4306871f81da
-tsteps = 0:0.5:8
+# ╔═╡ 0155b625-4ac6-449f-9b69-41affbcd5a9f
+md"See the default parameter values in the appendix."
 
 # ╔═╡ 677424d5-73cc-4dbf-a2e7-1b6208bd55f7
 md"""
@@ -132,35 +102,20 @@ In our example, we only consider the uncertainty of $\gamma$ and $k_i$.
 For example, we model our belief on $\gamma$ with a [**log-normal distribution**](https://en.wikipedia.org/wiki/Log-normal_distribution).
 """
 
-# ╔═╡ 0a4318e8-5dc5-47d7-a5cf-a69bd0874d52
-Pγ = LogNormal(log(γ_star), 0.25)
-
 # ╔═╡ 9e3dd0c4-df28-44e7-bb6f-e824471f959a
 md"##"
-
-# ╔═╡ 2326a58e-aa75-43bc-9a21-45395e4f909c
-rand(Pγ)  # sample 1 data point
 
 # ╔═╡ 1fd88391-c494-4c10-92a8-1130c4cb0ad4
 md"Sampling from distribution object can easily be done using the `rand` function."
 
-# ╔═╡ 4fc43c3a-4ddb-41b7-8597-d6536177f8fb
-rand(Pγ, 5)  # sample 5 data points 
-
 # ╔═╡ fe29dbc0-4ae5-43f4-9fa6-b20b37dfe4cb
 md"Most summary statistics are also readily available:"
-
-# ╔═╡ 0d9bdac2-7322-4966-9a8c-dfcbee3327ef
-mean(Pγ), std(Pγ)
 
 # ╔═╡ e1b418ed-5e80-4be7-b21b-6a0930811ad9
 md"""
 ## 
 For the distribution of $k_i$, we opt for a simple [**triangular distribution**](https://en.wikipedia.org/wiki/Triangular_distribution).
 """
-
-# ╔═╡ 98bb3559-3d5f-42b2-8646-cbb2d369df8e
-Pkᵢ = TriangularDist(kᵢ_star/4, 7kᵢ_star/4)
 
 # ╔═╡ e710ff93-2560-43b3-bda6-53d2fd05eb29
 md"""
@@ -187,9 +142,6 @@ $$\mathbb{E}[\phi(X)] = \int \phi(x) f(x; \theta) g(\theta) \text{d}x \text{d}\t
 # ╔═╡ cec3d221-04b2-4f3a-ad9a-e4bd75207f97
 md"""##
 In casu, $\phi$ is the indicator function that the viral load at $t=8$ is reduced by a factor of 10:"""
-
-# ╔═╡ 43b9d5eb-592e-4fb3-b4a7-70f3b6aa9b07
-ϕ(viral_load) = last(viral_load) < Nᵥ₀ / 10;
 
 # ╔═╡ 0aabf6aa-6452-4ecd-ba32-878719f8879f
 md"""
@@ -225,7 +177,7 @@ Performs a Monte-Carlo simulation using a given `simulator` and a prior distribu
 for the parameter(s) `Pθ` using `n` samples. Returns both the throws and the 
 parameters that were used.
 """
-function monte_carlo(simulator, Pθ; n=1000)
+function monte_carlo(simulator::Function, Pθ::Sampleable; n=1000)
 	θs = [rand(Pθ) for i in 1:n]  # draw n parameter values
 	xs = [simulator(θ...) for θ in θs]  # perform a simulation for each parameter
 	return xs, θs
@@ -238,21 +190,8 @@ md"""
 We wrap the virus model in a function for convience.
 """
 
-# ╔═╡ c3281567-c90d-4417-9996-c9ed13ec07fe
-"""Simulates the viral load for eight days, given the parameters."""
-function simulate_virus(γ=γ_star, kᵢ=kᵢ_star, kᵥ=kᵥ_star)
-	prob = ODEProblem(odesys, [Nᵢ₀, Nᵥ₀], (0.0, 8.0), (γ, kᵢ, kᵥ))
-	return solve(prob, saveat=tsteps)[2,:]
-end;
-
 # ╔═╡ 4abce0c0-e4a9-47af-b96f-3c4d08e45a29
 md"##"
-
-# ╔═╡ c82940e7-e895-4e0e-b15e-2b68a2d320ce
-throw = simulate_virus(0.4, 0.7, 0.3)  # single simulation of viral load
-
-# ╔═╡ df0342ad-4a92-445b-b52c-c69cae4503de
-ϕ(throw)  # outcome of the single simulation
 
 # ╔═╡ cc06715d-2d24-40c3-a1e9-bdf652df1260
 md"""
@@ -261,17 +200,8 @@ md"""
 For now, let us only consider the uncertainty on $\gamma$, assumed to be log-normally distributed.
 """
 
-# ╔═╡ d7c7d945-9916-431e-84ae-4e545137cbaa
-throws1, θs1 = monte_carlo(simulate_virus, Pγ, n=100)
-
 # ╔═╡ b14af78b-548b-458b-a5f5-9e4c43aabd0b
 md"##"
-
-# ╔═╡ f6ed2867-866b-489d-a6cc-d4f3748427b6
-last.(throws1)  # get viral load at end point 
-
-# ╔═╡ 029a5d10-7b34-4d04-b93f-c8a9986bb584
-Eϕ1 = mean(ϕ, throws1)
 
 # ╔═╡ d425b961-6252-4eb4-9dec-215f7b4f2c69
 md"""
@@ -285,26 +215,11 @@ If we assume that the $\gamma$ and $k_i$ are *independent*, we can use multiply 
 # ╔═╡ 3dfdd191-c8bb-43ae-9911-67405bbae1c8
 md"##"
 
-# ╔═╡ 4520ea29-b9b9-4638-b219-055025051c7b
-Pγ_kᵢ_mult = product_distribution([Pγ, Pkᵢ])
-
-# ╔═╡ 3fd53e0d-64a5-4ca3-a19c-c7cc2393854c
-heatmap(0:0.01:3, 0:0.01:1, (p1, p2)->pdf(Pγ_kᵢ_mult, [p1, p2]), c=:speed, xlabel="γ", ylabel="kᵢ", title="Joint PDF of (γ, kᵢ) (independent)")
-
-# ╔═╡ 92aa8629-31a4-4af8-b45c-5b16d10aef4f
-rand(Pγ_kᵢ_mult)  # sampling is the same
-
 # ╔═╡ 08699316-9c75-4339-a802-9086008aee31
 md"## Results scenario 2"
 
-# ╔═╡ 596411ac-2a77-4e73-86c7-62edf331528c
-throws2, θs2 = monte_carlo(simulate_virus, Pγ_kᵢ_mult, n=100)
-
 # ╔═╡ 93a0f0df-1e20-4ad1-9407-98d4b2a04bcd
 md"##"
-
-# ╔═╡ 99465958-ec81-480e-bf87-fac976669ba7
-Eϕ2 = mean(ϕ, throws2)
 
 # ╔═╡ 60a5bef6-45e9-4604-8896-9bd715f8935b
 md"""
@@ -336,7 +251,7 @@ md"## Summary of the three scenarios"
 md"""
 ## Summary of the Monte Carlo method
 
-- Very general method for uncertainty analysis, works with any type of model.
+- Very general method for uncertainty analysis, works with any type of model, global method.
 - Easy to implement.
 - Might require a very large number of simulations $n$ to fully cover the parameter space. Can be dealt with more advanced variants, e.g. *Latin hypercube sampling*. 
 - Trivial to parallelize on a cluster (**[embarrassingly parallelizable algorithm](https://en.wikipedia.org/wiki/Embarrassingly_parallel)**).
@@ -351,7 +266,7 @@ md"""
 
 ## Resources
 
-Nopens, I. and Fernandes Del Poze, *Modelling and Simulation of Biosystems - course notes* - edition 2022
+Nopens, I. and Fernandes Del Pozo, D., *Modelling and Simulation of Biosystems - course notes* - edition 2022
 
 Nelson, P., *Physical Models of Living Systems*
 
@@ -378,26 +293,116 @@ begin
 	mycolors = [myblue, myred, mygreen, myorange, myyellow]
 end;
 
-# ╔═╡ b0559ba1-4fb9-4897-a502-f8db5e18c72b
-plot(solution, color=[myblue myorange], lw=2)
-
-# ╔═╡ cdc5d429-299e-499b-badf-f94192c34cba
-pPγ = plot(p->pdf(Pγ, p), 0, 3, color=myblue, label="PDF of γ", xlabel="γ", lw=2)
-
-# ╔═╡ 8f84de4a-595c-4c36-856a-858c7a95ee9a
-pPkᵢ = plot(p->pdf(Pkᵢ, p), 0, 1, color=myblue, label="PDF of kᵢ", xlabel="kᵢ", lw=2)
-
-# ╔═╡ 416ac64c-5224-4cfd-9a45-3d0766f32053
-plot(tsteps, throw, label="Nᵥ(t)", xlabel="t", color=mygreen)
-
 # ╔═╡ d17d0de2-9135-42fc-9908-e617a220a26e
 md"show table of contents: $(@bind toc CheckBox())"
 
 # ╔═╡ aeb0bbc4-04f7-402d-bf07-b4e21c69f5b7
 toc && TableOfContents()
 
+# ╔═╡ 96a5db35-fa55-4c63-9a90-6f67f99f8853
+md"### Default parameter values"
+
+# ╔═╡ f2b9820c-5ed9-47fc-90a7-da8259f3a9f5
+γ_star , kᵢ_star , kᵥ_star = 1.4, 0.5, log2(1.6)
+
+# ╔═╡ fee99948-8d30-479c-ad59-b28571f7ecc5
+md"γ : $(@bind γ Slider(0.01:0.01:3, show_value=true, default=γ_star))"
+
+# ╔═╡ cc6ac990-4e84-49ff-92f1-724da031170f
+md"kᵢ : $(@bind kᵢ Slider(0.01:0.01:2, show_value=true, default=kᵢ_star))"
+
+# ╔═╡ 3361077a-91d0-4d5a-80b9-c0922f07f85c
+md"kᵥ : $(@bind kᵥ Slider(0.01:0.01:2, show_value=true, default=kᵥ_star))"
+
+# ╔═╡ 0a4318e8-5dc5-47d7-a5cf-a69bd0874d52
+Pγ = LogNormal(log(γ_star), 0.25)
+
+# ╔═╡ cdc5d429-299e-499b-badf-f94192c34cba
+pPγ = plot(p->pdf(Pγ, p), 0, 3, color=myblue, label="PDF of γ",
+			xlabel="γ", lw=2, legendfontsize=12)
+
+# ╔═╡ 2326a58e-aa75-43bc-9a21-45395e4f909c
+rand(Pγ)  # sample 1 data point
+
+# ╔═╡ 4fc43c3a-4ddb-41b7-8597-d6536177f8fb
+rand(Pγ, 5)  # sample 5 data points 
+
+# ╔═╡ 0d9bdac2-7322-4966-9a8c-dfcbee3327ef
+mean(Pγ), std(Pγ)
+
+# ╔═╡ 98bb3559-3d5f-42b2-8646-cbb2d369df8e
+Pkᵢ = TriangularDist(kᵢ_star/4, 7kᵢ_star/4)
+
+# ╔═╡ 8f84de4a-595c-4c36-856a-858c7a95ee9a
+pPkᵢ = plot(p->pdf(Pkᵢ, p), 0, 1, color=myblue, label="PDF of kᵢ",
+		xlabel="kᵢ", lw=2, legendfontsize=12)
+
+# ╔═╡ 4520ea29-b9b9-4638-b219-055025051c7b
+Pγ_kᵢ_mult = product_distribution([Pγ, Pkᵢ])
+
+# ╔═╡ 3fd53e0d-64a5-4ca3-a19c-c7cc2393854c
+heatmap(0:0.01:3, 0:0.01:1, (p1, p2)->pdf(Pγ_kᵢ_mult, [p1, p2]), c=:speed, xlabel="γ", ylabel="kᵢ", title="Joint PDF of (γ, kᵢ) (independent)")
+
+# ╔═╡ 92aa8629-31a4-4af8-b45c-5b16d10aef4f
+rand(Pγ_kᵢ_mult)  # sampling is the same
+
+# ╔═╡ bfe04fd1-6d79-47ce-8ac3-4520082ebd1b
+md"with the following initial values:"
+
+# ╔═╡ d5e41310-e189-4dc4-b459-eb157366dec5
+Nᵢ₀ = 1e5  # initial number of infected cells 
+
+# ╔═╡ dcb47ebe-15ae-40a4-afcf-1643184fc8c1
+Nᵥ₀ = 2e5  # initial virus concenctration
+
+# ╔═╡ 17abdbc4-36a9-4e98-9a70-c4ff017180ce
+prob = ODEProblem(odesys, [Nᵢ₀, Nᵥ₀], (0.0, 8.0), (γ, kᵢ, kᵥ))  # from t=0 to t=8 
+
+# ╔═╡ 12d09335-7c49-4961-99af-a817b3abab46
+solution = solve(prob)
+
+# ╔═╡ b0559ba1-4fb9-4897-a502-f8db5e18c72b
+plot(solution, color=[myblue myorange], lw=2, legendfontsize=14)
+
+# ╔═╡ 43b9d5eb-592e-4fb3-b4a7-70f3b6aa9b07
+ϕ(viral_load) = last(viral_load) < Nᵥ₀ / 10;
+
+# ╔═╡ 40ff04d8-4c0b-4b7f-86db-4306871f81da
+tsteps = 0:0.5:8
+
+# ╔═╡ c3281567-c90d-4417-9996-c9ed13ec07fe
+"""Simulates the viral load for eight days, given the parameters."""
+function simulate_virus(γ=γ_star, kᵢ=kᵢ_star, kᵥ=kᵥ_star)
+	prob = ODEProblem(odesys, [Nᵢ₀, Nᵥ₀], (0.0, 8.0), (γ, kᵢ, kᵥ))
+	return solve(prob, saveat=tsteps)[2,:]
+end;
+
+# ╔═╡ c82940e7-e895-4e0e-b15e-2b68a2d320ce
+throw = simulate_virus(0.4, 0.7, 0.3)  # single simulation of viral load
+
+# ╔═╡ df0342ad-4a92-445b-b52c-c69cae4503de
+ϕ(throw)  # outcome of the single simulation
+
+# ╔═╡ d7c7d945-9916-431e-84ae-4e545137cbaa
+throws1, θs1 = monte_carlo(simulate_virus, Pγ, n=100)
+
+# ╔═╡ f6ed2867-866b-489d-a6cc-d4f3748427b6
+last.(throws1)  # get viral load at end point 
+
+# ╔═╡ 029a5d10-7b34-4d04-b93f-c8a9986bb584
+Eϕ1 = mean(ϕ, throws1)
+
+# ╔═╡ 596411ac-2a77-4e73-86c7-62edf331528c
+throws2, θs2 = monte_carlo(simulate_virus, Pγ_kᵢ_mult, n=100)
+
+# ╔═╡ 99465958-ec81-480e-bf87-fac976669ba7
+Eϕ2 = mean(ϕ, throws2)
+
+# ╔═╡ 416ac64c-5224-4cfd-9a45-3d0766f32053
+plot(tsteps, throw, label="Nᵥ(t)", xlabel="t", color=mygreen, legendfontsize=14)
+
 # ╔═╡ 30042dde-f2ba-40d5-b288-f576a93b94e7
-md"HIV model implemented as a standard ODE."
+md"### HIV model implemented as a standard ODE"
 
 # ╔═╡ 92a5304a-c26b-4bb8-ba58-59c28f4caa72
 function virus_model!(du, u, (γ, kᵢ, kᵥ), t)
@@ -414,7 +419,7 @@ md"Some plotting functions."
 
 # ╔═╡ c3409be7-d63c-4b8c-9829-6ee91a4c75b0
 function plotMC(throws; kwargs...)
-	p = plot(; kwargs...)
+	p = plot(legendfontsize=14; kwargs...)
 	#plot!(p, solution, vars=[2], lw=3, color=myorange)
 	plot!(p, tsteps, hcat(throws...), label="", alpha=0.3, color=mygreen)
 	plot!(p, tsteps, mean(throws), label="simulation average", color=myred, lw=2)
@@ -429,13 +434,14 @@ pmc1 = plotMC(throws1; title="MC scenario 1\n(sample from Pγ)")
 pmc2 = plotMC(throws2; title="MC scenario 2\n(sample from Pγ x Pkᵢ)")
 
 # ╔═╡ d92e75b7-aa53-4746-bfb1-6bd1481484b6
-function plothist(throws; kwargs...)
+function plothist(throws; split=false, kwargs...)
 	x = last.(throws)
 	m = mean(x)
 	p = plot(xlabel="Nᵢ", label="throws day 8",
-			xlims=(0, Nᵥ₀/2); kwargs...)
-	any(ϕ, x) && histogram!(p, filter(ϕ, x), color=mygreen, )
-	any(!ϕ, x) && histogram!(p, filter(!ϕ, x), color=mygreen, alpha=0.5, label="")
+			xlims=(0, Nᵥ₀/2), legendfontsize=14; kwargs...)
+	!split && histogram!(p, x, color=mygreen, label="")
+	split && any(ϕ, x) && histogram!(p, filter(ϕ, x), color=mygreen, label="")
+	split && any(!ϕ, x) && histogram!(p, filter(!ϕ, x), color=mygreen, alpha=0.5, label="")
 	vline!(p, [m], label="simulation average", lw=2, color=myred)
 	vline!(p, [Nᵥ₀ / 10], label="Nᵥ₀ / 10", lw=2, color=myyellow)
 	return p
@@ -448,7 +454,7 @@ phist1 = plothist(throws1, title="Viral load at t=8\n(scenario 1: E[ϕ]≈$Eϕ1)
 phist2 = plothist(throws2, title="Viral load at t=8\n(scenario 2: E[ϕ]≈$Eϕ2)")
 
 # ╔═╡ 651b97ca-5cbb-447e-a09c-9d33a37fb0da
-md"Standard deviations of the $\gamma$ and $k_i$."
+md"Standard deviations of $\gamma$ and $k_i$."
 
 # ╔═╡ b432c3e3-628d-4cc8-8643-bc8e755147e0
 σ_γ, σ_ki = std(Pγ), std(Pkᵢ)
@@ -481,16 +487,19 @@ phist3 = plothist(throws3, title="Viral load at t=8\n(scenario 3: E[ϕ]≈$Eϕ3)
 plot(pmc1, phist1, pmc2, phist2, pmc3, phist3, size=(1200, 1000), legend=false, layout=(3, 2))
 
 # ╔═╡ d79ebd96-f745-4f30-920b-5d2652ed5d78
-md"Below is an ilustration of the same model, but solved as a Jump Diffusion equation, simulating one day at the time." 
+md"""
+### Jump diffusion version of the virus model
+
+Below is an ilustration of the same model, but solved as a Jump Diffusion equation, simulating one day at the time."""
 
 # ╔═╡ 85e16937-3bfc-4213-a2d6-9a43a49567a1
-dprob = DiscreteProblem(virus_model, Int[Nᵢ₀, Nᵥ₀], (0.0, 8.0), (γ, kᵢ, kᵥ))
+dprob = DiscreteProblem(virus_system, Int[Nᵢ₀, Nᵥ₀], (0.0, 8.0), (γ, kᵢ, kᵥ))
 
 # ╔═╡ fbd57014-5218-4992-bb8e-4431677899dc
-jprob = JumpProblem(virus_model, dprob, Direct(), save_positions=(false,false))
+jprob = JumpProblem(virus_system, dprob, Direct(), save_positions=(false,false))
 
 # ╔═╡ 30cc2660-00ca-4308-b74e-018e67566fc3
-sol_discrete = solve(jprob, SSAStepper(), saveat=1)
+sol_discrete = solve(jprob, SSAStepper(), saveat=tsteps)
 
 # ╔═╡ 5df01611-90ee-44a5-b735-ce406e3f8600
 plot(sol_discrete)
@@ -2252,12 +2261,7 @@ version = "0.9.1+5"
 # ╟─fee99948-8d30-479c-ad59-b28571f7ecc5
 # ╟─cc6ac990-4e84-49ff-92f1-724da031170f
 # ╟─3361077a-91d0-4d5a-80b9-c0922f07f85c
-# ╟─96a5db35-fa55-4c63-9a90-6f67f99f8853
-# ╠═f2b9820c-5ed9-47fc-90a7-da8259f3a9f5
-# ╟─bfe04fd1-6d79-47ce-8ac3-4520082ebd1b
-# ╠═d5e41310-e189-4dc4-b459-eb157366dec5
-# ╠═dcb47ebe-15ae-40a4-afcf-1643184fc8c1
-# ╠═40ff04d8-4c0b-4b7f-86db-4306871f81da
+# ╟─0155b625-4ac6-449f-9b69-41affbcd5a9f
 # ╟─677424d5-73cc-4dbf-a2e7-1b6208bd55f7
 # ╠═0a4318e8-5dc5-47d7-a5cf-a69bd0874d52
 # ╟─cdc5d429-299e-499b-badf-f94192c34cba
@@ -2325,6 +2329,12 @@ version = "0.9.1+5"
 # ╠═ffb3192d-8ee8-4722-94c3-08ebd2b56ba0
 # ╟─d17d0de2-9135-42fc-9908-e617a220a26e
 # ╟─aeb0bbc4-04f7-402d-bf07-b4e21c69f5b7
+# ╟─96a5db35-fa55-4c63-9a90-6f67f99f8853
+# ╠═f2b9820c-5ed9-47fc-90a7-da8259f3a9f5
+# ╟─bfe04fd1-6d79-47ce-8ac3-4520082ebd1b
+# ╠═d5e41310-e189-4dc4-b459-eb157366dec5
+# ╠═dcb47ebe-15ae-40a4-afcf-1643184fc8c1
+# ╠═40ff04d8-4c0b-4b7f-86db-4306871f81da
 # ╟─30042dde-f2ba-40d5-b288-f576a93b94e7
 # ╠═92a5304a-c26b-4bb8-ba58-59c28f4caa72
 # ╠═0293d9be-4d85-4829-a1b7-6f341c9f694b
