@@ -36,11 +36,12 @@ html"<button onclick='present()'>present</button>"
 md"""
 ## Case study: HIV treatment
 
-We study a simple model of treating HIV with an antiretroviral drug:
+We study a simple model of **treating HIV with an antiretroviral drug**:
 - we model the number of infected cells and the viral load for *8 days after treatment*;
-- the treatment is a success if the *initial viral load is reduced by a factor of 10!*
+- the treatment is a success if the *initial viral load is reduced by a factor of 10*;
+- how to deal with *parameter uncertainty* and *biological variation*?
 
-> How to deal with parameter uncertainty and biological variation?
+> What is the chance that the treatment decimates the viral load after 8 days?
 """
 
 # ╔═╡ c91225dd-b003-4bcb-bda8-5d2d97a64751
@@ -99,7 +100,7 @@ md"""
 
 In our example, we only consider the uncertainty of $\gamma$ and $k_i$. 
 
-For example, we model our belief on $\gamma$ with a [**log-normal distribution**](https://en.wikipedia.org/wiki/Log-normal_distribution).
+For example, we model our belief on $\gamma$ with a [**log-normal distribution**](https://en.wikipedia.org/wiki/Log-normal_distribution):
 """
 
 # ╔═╡ 9e3dd0c4-df28-44e7-bb6f-e824471f959a
@@ -149,7 +150,7 @@ md"""
 
 In all interesting cases, computing the above integral will be *intractable*. However, if we would be able generate $n$ i.i.d. samples from $P(X)$, i.e. $x_1,\ldots,x_n$, we can approximate the integral as
 
-$$\mathbb{E}[\phi(X)] \approx \sum_{i=1}^n \phi(x_i)\,.$$
+$$\mathbb{E}[\phi(X)] \approx \frac{1}{n} \sum_{i=1}^n \phi(x_i)\,.$$
 
 This motivates the **Monte-Carlo method**.
 """
@@ -209,14 +210,14 @@ md"""
 
 Monte-Carlo methods trivially work with two or more variables. 
 
-If we assume that the $\gamma$ and $k_i$ are *independent*, we can use multiply their PDFs to obtain the **joint distribution**. 
+If we assume that the $\gamma$ and $k_i$ are *independent*, we can multiply their PDFs to obtain the **joint distribution**. 
 """
 
 # ╔═╡ 3dfdd191-c8bb-43ae-9911-67405bbae1c8
 md"##"
 
 # ╔═╡ 08699316-9c75-4339-a802-9086008aee31
-md"## Results scenario 2"
+md"##"
 
 # ╔═╡ 93a0f0df-1e20-4ad1-9407-98d4b2a04bcd
 md"##"
@@ -399,7 +400,7 @@ throws2, θs2 = monte_carlo(simulate_virus, Pγ_kᵢ_mult, n=100)
 Eϕ2 = mean(ϕ, throws2)
 
 # ╔═╡ 416ac64c-5224-4cfd-9a45-3d0766f32053
-plot(tsteps, throw, label="Nᵥ(t)", xlabel="t", color=mygreen, legendfontsize=14)
+plot(tsteps, throw, label="Nᵥ(t)", xlabel="t", color=mygreen, legendfontsize=14, lw=2)
 
 # ╔═╡ 30042dde-f2ba-40d5-b288-f576a93b94e7
 md"### HIV model implemented as a standard ODE"
